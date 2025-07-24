@@ -1,0 +1,18 @@
+service: smart-task-manager
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-southeast-5
+  stage: dev
+
+functions:
+  getTasks:
+    handler: src/handlers/tasks.getTasks
+    events:
+      - httpApi:
+          path: /tasks
+          method: get
+
+plugins:
+  - serverless-esbuild

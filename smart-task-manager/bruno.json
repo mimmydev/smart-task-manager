@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "[Learning] Smart Task Manager - AWS",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

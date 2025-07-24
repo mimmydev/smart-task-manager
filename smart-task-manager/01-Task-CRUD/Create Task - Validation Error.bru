@@ -1,0 +1,19 @@
+meta {
+  name: Create Task - Validation Error
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{BASE_URL}}/tasks
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userId": "{{USER_ID}}",
+    "title": ""
+  }
+  //Description: Test validation - should return 400
+}

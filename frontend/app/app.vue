@@ -1,7 +1,10 @@
-<script setup lang="ts">
-import { Button } from '@/components/ui/button';
-</script>
-
+<!-- app.vue -->
 <template>
-  <Button>Button</Button>
+  <div class="min-h-screen bg-background">
+    <AppHeader />
+    <main class="container mx-auto py-6">
+      <NuxtPage />
+    </main>
+    <AppFooter />
+  </div>
 </template>

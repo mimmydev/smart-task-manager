@@ -5,6 +5,9 @@ provider:
   runtime: nodejs18.x
   region: ap-southeast-5
   stage: dev
+  environment:
+    SUPABASE_URL: ${env:SUPABASE_URL}
+    SUPABASE_KEY: ${env:SUPABASE_KEY}
 
 functions:
   getTasks:
@@ -14,5 +17,13 @@ functions:
           path: /tasks
           method: get
 
+  createTask:
+    handler: src/handlers/tasks.createTask
+    events:
+      - httpApi:
+          path: /tasks
+          method: post
+
 plugins:
   - serverless-esbuild
+  - serverless-dotenv-plugin

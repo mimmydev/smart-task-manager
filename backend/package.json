@@ -19,11 +19,13 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.848.0",
     "@aws-sdk/lib-dynamodb": "^3.850.0",
+    "@supabase/supabase-js": "^2.52.1",
     "serverless": "^3.40.0"
   },
   "devDependencies": {
     "@types/minimatch": "^6.0.0",
     "@types/node": "^24.1.0",
+    "serverless-dotenv-plugin": "^6.0.0",
     "serverless-esbuild": "^1.55.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",

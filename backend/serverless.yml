@@ -2,7 +2,7 @@ service: smart-task-manager
 
 provider:
   name: aws
-  runtime: nodejs18.x
+  runtime: nodejs20.x
   region: ap-southeast-5
   stage: dev
   environment:
@@ -13,16 +13,48 @@ functions:
   getTasks:
     handler: src/handlers/tasks.getTasks
     events:
-      - httpApi:
+      - http:
           path: /tasks
           method: get
+          cors: true
 
   createTask:
     handler: src/handlers/tasks.createTask
     events:
-      - httpApi:
+      - http:
           path: /tasks
           method: post
+          cors: true
+
+  updateTask:
+    handler: src/handlers/tasks.updateTask
+    events:
+      - http:
+          path: /tasks/{id}
+          method: put
+          cors: true
+
+  deleteTask:
+    handler: src/handlers/tasks.deleteTask
+    events:
+      - http:
+          path: /tasks/{id}
+          method: delete
+  handleOptionsRoot:
+    handler: src/handlers/options.handleOptions
+    events:
+      - http:
+          path: tasks
+          method: options
+          cors: true
+
+  handleOptionsWithId:
+    handler: src/handlers/options.handleOptions
+    events:
+      - http:
+          path: tasks/{id}
+          method: options
+          cors: true
 
 plugins:
   - serverless-esbuild

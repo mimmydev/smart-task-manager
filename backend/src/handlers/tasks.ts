@@ -117,87 +117,109 @@ export const updateTask = async (event: any) => {
     if (!taskId) {
       return {
         statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
         body: JSON.stringify({ message: 'Task ID is required' }),
       };
     }
 
     //** 2. Parse request body and extract all possible fields
+    //** 2. Parse request body
     const body = JSON.parse(event.body || '{}');
-    const { title, description, priority, completed } = body;
+    const { title, description, priority, status, dueDate } = body;
 
-    //** 3. Basic validation: ensure at least one field is being updated
+    //** 3. Validate at least one field is being updated
     if (
       title === undefined &&
       description === undefined &&
       priority === undefined &&
-      completed === undefined
+      status === undefined &&
+      dueDate === undefined
     ) {
       return {
         statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
         body: JSON.stringify({
           message:
-            'No update data provided. Please provide at least one field to update (title, description, priority, or completed).',
+            'No update data provided. Please provide at least one field to update.',
         }),
       };
     }
 
-    //** 4. Validate priority if it's being updated (must be one of allowed values)
+    //** 4. Validate priority if provided
     const validPriorities = ['low', 'medium', 'high'];
     if (priority !== undefined && !validPriorities.includes(priority)) {
       return {
         statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
         body: JSON.stringify({
           message: 'Priority must be one of: low, medium, high',
         }),
       };
     }
 
-    //** 5. Validate description if it's being updated (cannot be empty)
-    if (description !== undefined && description.trim().length === 0) {
+    //** 5. Validate status if provided
+    const validStatuses = ['todo', 'in-progress', 'completed'];
+    if (status !== undefined && !validStatuses.includes(status)) {
       return {
         statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
         body: JSON.stringify({
-          message: 'Description cannot be empty',
+          message: 'Status must be one of: todo, in-progress, completed',
         }),
       };
     }
 
-    //** 6. Construct the update object for Supabase
-    const updateData: {
-      title?: string;
-      description?: string;
-      priority?: string;
-      completed?: boolean;
-      modified_at?: string;
-    } = {
+    //** 6. Build update object (using database field names)
+    const updateData: any = {
       modified_at: new Date().toISOString(),
     };
 
-    //** Add fields to update object only if they are provided
-    if (title !== undefined) {
-      updateData.title = title.trim();
-    }
-    if (description !== undefined) {
-      updateData.description = description.trim();
-    }
-    if (priority !== undefined) {
-      updateData.priority = priority;
-    }
-    if (completed !== undefined) {
-      updateData.completed = completed;
+    if (title !== undefined) updateData.title = title.trim();
+    if (description !== undefined)
+      updateData.description = description?.trim() || null;
+    if (priority !== undefined) updateData.priority = priority;
+    if (status !== undefined) updateData.status = status;
+    if (dueDate !== undefined) {
+      updateData.due_date = dueDate ? new Date(dueDate).toISOString() : null;
     }
 
-    //** 7. Update in Supabase using ID
+    //** 7. Update in Supabase
     const { data, error } = await supabase
       .from('tasks')
       .update(updateData)
-      .eq('id', taskId)
-      .select();
+      .eq('id', taskId).select(`
+        id,
+        task_id,
+        title,
+        description,
+        priority,
+        status,
+        due_date,
+        created_at,
+        modified_at,
+        ai_analysis
+      `);
 
     if (error) {
       console.error('Supabase error:', error);
       return {
         statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
         body: JSON.stringify({
           message: 'Failed to update task',
           error: error.message,
@@ -205,27 +227,48 @@ export const updateTask = async (event: any) => {
       };
     }
 
-    //** If no data is returned, the task was not found
     if (!data || data.length === 0) {
       return {
-        statusCode: 404, //** Not Found
+        statusCode: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
         body: JSON.stringify({ message: 'Task not found' }),
       };
     }
 
-    //** 8. Return updated task with a 200 status code
+    //** 8. Transform response to frontend format
+    const task = data[0];
+    const frontendTask = {
+      id: task.id,
+      taskId: task.task_id,
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      status: task.status,
+      dueDate: task.due_date ? new Date(task.due_date) : null,
+      createdAt: new Date(task.created_at),
+      updatedAt: new Date(task.modified_at),
+      aiAnalysis: task.ai_analysis,
+    };
+
     return {
-      statusCode: 200, //** Use 200 for a successful update
+      statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify(data[0]),
+      body: JSON.stringify(frontendTask),
     };
   } catch (error) {
     console.error('Error updating task:', error);
     return {
       statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
       body: JSON.stringify({ message: 'Failed to update task' }),
     };
   }

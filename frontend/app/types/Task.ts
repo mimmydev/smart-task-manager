@@ -1,19 +1,24 @@
 export interface Task {
-  id: any
+  id: number
   taskId: string
-  userId: string
   title: string
   description?: string
-  dueDate?: Date
   priority: 'low' | 'medium' | 'high'
+  status: 'todo' | 'in-progress' | 'completed'
+  dueDate?: Date
   aiAnalysis?: {
     urgency: number
     importance: number
     estimatedMinutes: number
     reasoning: string
-    suggestedSchedule?: Date
   }
-  status: 'todo' | 'in-progress' | 'completed'
   createdAt: Date
   updatedAt: Date
+}
+
+export interface CreateTaskRequest {
+  title: string
+  description?: string
+  priority: 'low' | 'medium' | 'high'
+  dueDate?: string
 }

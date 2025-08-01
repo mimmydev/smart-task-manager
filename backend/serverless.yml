@@ -40,6 +40,7 @@ functions:
       - http:
           path: /tasks/{id}
           method: delete
+
   handleOptionsRoot:
     handler: src/handlers/options.handleOptions
     events:
@@ -54,6 +55,14 @@ functions:
       - http:
           path: tasks/{id}
           method: options
+          cors: true
+
+  viewTask:
+    handler: src/handlers/tasks.viewTask
+    events:
+      - http:
+          path: /tasks/view/{task_id}
+          method: get
           cors: true
 
 plugins:

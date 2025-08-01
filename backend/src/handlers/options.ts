@@ -5,7 +5,7 @@ export const handleOptions = async (event: any) => {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Max-Age': '86400', // 24 hours
+      'Access-Control-Max-Age': '86400', //** 24 hours
     },
     body: '',
   };

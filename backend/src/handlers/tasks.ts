@@ -331,6 +331,113 @@ export const deleteTask = async (event: any) => {
   }
 };
 
+export const viewTask = async (event: any, context: any) => {
+  try {
+    //** Step 1: Extract task_id from URL path and validate it
+    const taskId = event.pathParameters?.task_id;
+    if (!taskId) {
+      return {
+        statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+        body: JSON.stringify({
+          error: 'Validation Error',
+          message: 'Task ID is required',
+        }),
+      };
+    }
+
+    //** Step 2: Fetch single task from Supabase using task_id
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(
+        `
+        id,
+        task_id,
+        title,
+        description,
+        priority,
+        status,
+        completed,
+        due_date,
+        created_at,
+        modified_at,
+        ai_analysis
+      `
+      )
+      .eq('task_id', taskId)
+      .single();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      //** Check if it's a "not found" error
+      if (error.code === 'PGRST116') {
+        return {
+          statusCode: 404,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+          body: JSON.stringify({
+            error: 'Not Found',
+            message: 'Task not found',
+          }),
+        };
+      }
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+        body: JSON.stringify({
+          error: 'Database Error',
+          message: 'Failed to retrieve task',
+        }),
+      };
+    }
+
+    //** Step 3: Transform and return the task data
+    const task = data;
+    const frontendTask = {
+      id: task.id,
+      taskId: task.task_id,
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      status: task.status,
+      dueDate: task.due_date ? new Date(task.due_date) : null,
+      createdAt: new Date(task.created_at),
+      updatedAt: new Date(task.modified_at),
+      aiAnalysis: task.ai_analysis,
+    };
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify(frontendTask),
+    };
+  } catch (error) {
+    console.error('Error getting task:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({
+        error: 'Internal Server Error',
+        message: 'Failed to get task',
+      }),
+    };
+  }
+};
+
 export const getTasks = async (event: any, context: any) => {
   try {
     //** 🎯 Fetch tasks from Supabase

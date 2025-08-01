@@ -1,0 +1,15 @@
+meta {
+  name: View Task
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{BASE_URL}}/tasks/view/:task_id
+  body: none
+  auth: none
+}
+
+params:path {
+  task_id: 
+}

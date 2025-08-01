@@ -5,6 +5,7 @@ export interface Task {
   description?: string
   priority: 'low' | 'medium' | 'high'
   status: 'todo' | 'in-progress' | 'completed'
+  completed?: boolean
   dueDate?: Date
   aiAnalysis?: {
     urgency: number

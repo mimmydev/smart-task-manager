@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useAIAnalysis } from '@/composables/useAIAnalysis'
 
 interface Props {
   task: Task
@@ -23,8 +24,14 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   'update:open': [value: boolean]
   edit: [task: Task]
+  'analysis-complete': [task: Task]
 }>()
 
+const {
+  loading: aiAnalysisLoading,
+  error: aiAnalysisError,
+  analyzeTask,
+} = useAIAnalysis()
 const aiSummaryLoading = ref(false)
 const aiSummary = ref('')
 
@@ -33,13 +40,31 @@ const handleOpenChange = (value: boolean) => {
 }
 
 const handleAISummarize = async () => {
-  aiSummaryLoading.value = true
-  //** Placeholder for AI functionality
-  setTimeout(() => {
-    aiSummary.value =
-      'This is a placeholder for AI-generated task summary and insights. The AI would analyze the task content, priority, and context to provide actionable insights and recommendations.'
-    aiSummaryLoading.value = false
-  }, 2000)
+  if (props.task.aiAnalysis) {
+    //** If AI analysis already exists, just show a summary message
+    aiSummary.value = `Based on the AI analysis, this task has an urgency level of ${props.task.aiAnalysis.urgency}/10 and importance level of ${props.task.aiAnalysis.importance}/10. It's estimated to take ${props.task.aiAnalysis.estimatedMinutes} minutes to complete. ${props.task.aiAnalysis.reasoning}`
+    return
+  }
+
+  try {
+    const result = await analyzeTask(props.task.taskId)
+    if (result) {
+      //** Create updated task with AI analysis
+      const updatedTask: Task = {
+        ...props.task,
+        aiAnalysis: result.aiAnalysis,
+      }
+
+      //** Set summary message
+      aiSummary.value = `AI analysis complete! This task has an urgency level of ${result.aiAnalysis.urgency}/10 and importance level of ${result.aiAnalysis.importance}/10. It's estimated to take ${result.aiAnalysis.estimatedMinutes} minutes to complete. ${result.aiAnalysis.reasoning}`
+
+      //** Emit the updated task to parent
+      emit('analysis-complete', updatedTask)
+    }
+  } catch (error) {
+    console.error('Failed to analyze task:', error)
+    aiSummary.value = 'Failed to analyze task. Please try again.'
+  }
 }
 
 const statusClass = computed(() => {
@@ -113,7 +138,6 @@ const formatDate = (date: Date | string) => {
       </DialogHeader>
 
       <div class="space-y-4">
-        <!-- Title and Priority -->
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <h3 class="heading-md text-primary mb-2">{{ task.title }}</h3>
@@ -121,13 +145,11 @@ const formatDate = (date: Date | string) => {
           <PriorityBadge :priority="task.priority" />
         </div>
 
-        <!-- Task ID -->
         <div>
           <span class="label text-secondary">Task ID</span>
           <p class="text-primary body-md mt-1 font-mono">{{ task.taskId }}</p>
         </div>
 
-        <!-- Status -->
         <div>
           <span class="label text-secondary">Status</span>
           <div class="mt-1">
@@ -140,7 +162,6 @@ const formatDate = (date: Date | string) => {
           </div>
         </div>
 
-        <!-- Completed Status -->
         <div v-if="task.completed !== undefined">
           <span class="label text-secondary">Completed</span>
           <div class="mt-1">
@@ -157,13 +178,11 @@ const formatDate = (date: Date | string) => {
           </div>
         </div>
 
-        <!-- Description -->
         <div v-if="task.description">
           <span class="label text-secondary">Description</span>
           <p class="text-primary body-md mt-1">{{ task.description }}</p>
         </div>
 
-        <!-- Due Date -->
         <div v-if="task.dueDate">
           <span class="label text-secondary">Due Date</span>
           <p class="text-primary body-md mt-1">
@@ -216,15 +235,17 @@ const formatDate = (date: Date | string) => {
             </p>
           </div>
           <div>
-            <span class="label text-secondary">AI Reasoning</span>
+            <span class="label text-secondary font-bold">AI Reasoning</span>
             <p class="text-secondary body-sm mt-1">
               {{ task.aiAnalysis.reasoning }}
+            </p>
+            <p class="text-priority-medium pt-2.5 text-xs">
+              This AI not accurate most of the time so don't take it seriously
             </p>
           </div>
         </div>
 
-        <!-- AI Summary Section -->
-        <div class="bg-muted rounded-lg p-4">
+        <div v-else class="bg-muted rounded-lg p-4">
           <div class="mb-3 flex items-center justify-between">
             <h4 class="heading-sm text-primary flex items-center gap-2">
               <SparklesIcon class="h-4 w-4" />
@@ -232,15 +253,21 @@ const formatDate = (date: Date | string) => {
             </h4>
             <Button
               @click="handleAISummarize"
-              :disabled="aiSummaryLoading"
+              :disabled="aiAnalysisLoading"
               class="btn-primary text-sm"
             >
               <span
-                v-if="aiSummaryLoading"
+                v-if="aiAnalysisLoading"
                 class="mr-2 h-3 w-3 animate-spin rounded-full border-b-2 border-white"
               ></span>
               <SparklesIcon v-else class="mr-1 h-3 w-3" />
-              {{ aiSummaryLoading ? 'Analyzing...' : 'Get AI Summary' }}
+              {{
+                aiAnalysisLoading
+                  ? 'Analyzing...'
+                  : task.aiAnalysis
+                    ? 'Get Summary'
+                    : 'Analyze Task'
+              }}
             </Button>
           </div>
 
@@ -254,12 +281,11 @@ const formatDate = (date: Date | string) => {
           <div v-else-if="!aiSummaryLoading" class="py-4 text-center">
             <p class="text-secondary body-sm">
               Click "Get AI Summary" to analyze this task and receive AI-powered
-              insights and recommendations.
+              insights and recommendations. Though this only able to do ONCE.
             </p>
           </div>
         </div>
 
-        <!-- Timestamps -->
         <div
           class="text-secondary body-sm border-border flex justify-between border-t pt-4"
         >
@@ -276,7 +302,11 @@ const formatDate = (date: Date | string) => {
       </div>
 
       <DialogFooter>
-        <Button @click="emit('edit', task)" class="btn-primary">
+        <Button
+          v-show="!task.aiAnalysis"
+          @click="emit('edit', task)"
+          class="btn-primary"
+        >
           <EditIcon class="h-4 w-4" />
           Edit Task
         </Button>

@@ -113,6 +113,15 @@ const handleDetailEdit = (task: Task) => {
   editingTask.value = task
 }
 
+const handleAnalysisComplete = (updatedTask: Task) => {
+  //** Update the viewing task if it's the same task
+  if (viewingTask.value?.taskId === updatedTask.taskId) {
+    viewingTask.value = updatedTask
+  }
+  //** Fetch tasks to get the updated data from the server
+  fetchTasks()
+}
+
 const clearFilters = () => {
   searchQuery.value = ''
   statusFilter.value = 'all'
@@ -133,14 +142,12 @@ const formatDate = (dateString: string | Date) => {
 <template>
   <div class="bg-page min-h-screen">
     <div class="container-design py-8">
-      <!-- Header Section -->
       <div class="mb-8">
         <h1 class="heading-xl text-primary mb-4">Smart Task Manager</h1>
         <p class="text-secondary body-lg mb-6">
           Manage your tasks efficiently with AI-powered insights
         </p>
 
-        <!-- Stats Cards -->
         <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           <div
             class="bg-surface shadow-subtle border-border rounded-lg border p-4"
@@ -177,16 +184,13 @@ const formatDate = (dateString: string | Date) => {
         </div>
       </div>
 
-      <!-- Controls Section -->
       <div
         class="bg-surface shadow-subtle border-border mb-6 rounded-lg border p-6"
       >
         <div
           class="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center"
         >
-          <!-- Search and Filters -->
           <div class="flex flex-1 flex-col gap-4 sm:flex-row">
-            <!-- Search -->
             <div class="relative max-w-md flex-1">
               <SearchIcon
                 class="text-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform"
@@ -199,7 +203,6 @@ const formatDate = (dateString: string | Date) => {
               />
             </div>
 
-            <!-- Filters -->
             <div class="flex items-center gap-3">
               <select v-model="statusFilter" class="input-field min-w-32">
                 <option value="all">All Status</option>
@@ -221,7 +224,6 @@ const formatDate = (dateString: string | Date) => {
             </div>
           </div>
 
-          <!-- Add Task Button -->
           <Button @click="showAddTask = true" class="btn-primary">
             <PlusIcon class="h-4 w-4" />
             Add New Task
@@ -229,14 +231,12 @@ const formatDate = (dateString: string | Date) => {
         </div>
       </div>
 
-      <!-- Loading State -->
       <div v-if="loading" class="flex justify-center py-12">
         <div
           class="border-primary h-8 w-8 animate-spin rounded-full border-b-2"
         ></div>
       </div>
 
-      <!-- Error State -->
       <div
         v-else-if="error"
         class="bg-error/10 border-error/20 mb-6 rounded-lg border p-4"
@@ -244,7 +244,6 @@ const formatDate = (dateString: string | Date) => {
         <p class="text-error body-md">{{ error }}</p>
       </div>
 
-      <!-- Tasks List Component -->
       <ListTasks
         v-if="!loading && !error"
         :tasks="filteredTasks"
@@ -255,7 +254,6 @@ const formatDate = (dateString: string | Date) => {
         @view-task="viewTask"
       />
 
-      <!-- Empty State -->
       <div
         v-if="!loading && !error && filteredTasks.length === 0"
         class="py-12 text-center"
@@ -281,7 +279,6 @@ const formatDate = (dateString: string | Date) => {
         </Button>
       </div>
 
-      <!-- Modals -->
       <AddTask
         :open="showAddTask"
         @update:open="showAddTask = $event"
@@ -302,6 +299,7 @@ const formatDate = (dateString: string | Date) => {
         :open="!!viewingTask"
         @update:open="(open) => !open && (viewingTask = null)"
         @edit="handleDetailEdit"
+        @analysis-complete="handleAnalysisComplete"
       />
     </div>
   </div>

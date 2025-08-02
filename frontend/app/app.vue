@@ -1,6 +1,5 @@
-<!-- app.vue -->
 <template>
-  <div class="min-h-screen bg-background">
+  <div class="bg-background min-h-screen">
     <AppHeader />
     <main class="container mx-auto py-6">
       <NuxtPage />

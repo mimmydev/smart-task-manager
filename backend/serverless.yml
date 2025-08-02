@@ -65,6 +65,17 @@ functions:
           method: get
           cors: true
 
+  analyzeTask:
+    handler: src/handlers/aiAnalysis.analyzeTask
+    events:
+      - http:
+          path: /tasks/analyze/{task_id}
+          method: post
+          cors: true
+    environment:
+      GEMINI_API_KEY: ${env:GEMINI_API_KEY}
+    timeout: 30
+
 plugins:
   - serverless-esbuild
   - serverless-dotenv-plugin

@@ -1,0 +1,15 @@
+meta {
+  name: Analyze Task with Gemini
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{BASE_URL}}/analyze/:task_id
+  body: none
+  auth: none
+}
+
+params:path {
+  task_id: 
+}
